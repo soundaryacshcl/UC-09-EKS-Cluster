@@ -72,6 +72,21 @@ resource "aws_iam_role_policy_attachment" "lbc_attach" {
 }
 
 #########################
+
+# Service account for AWS Load Balancer Controller
+#########################
+resource "kubernetes_service_account" "lbc_sa" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.lbc_role.arn
+    }
+  }
+}
+
+#########################
+
 # Helm: AWS Load Balancer Controller
 #########################
 resource "helm_release" "loadbalancer_controller" {
@@ -99,7 +114,7 @@ resource "helm_release" "loadbalancer_controller" {
 
   set {
     name  = "serviceAccount.create"
-    value = "true"
+    value = "false"
   }
 
   set {
@@ -107,10 +122,14 @@ resource "helm_release" "loadbalancer_controller" {
     value = "aws-load-balancer-controller"
   }
 
+
+  depends_on = [kubernetes_service_account.lbc_sa]
+
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = aws_iam_role.lbc_role.arn
   }
+
 }
 
 #########################
