@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      CLUSTER_NAME: demo-eks
+      CLUSTER_NAME: my-project-eks
       AWS_REGION: us-east-1
       NAMESPACE: default
 
