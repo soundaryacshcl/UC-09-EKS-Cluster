@@ -1,22 +1,8 @@
-# Get EKS Cluster and Auth Token
+# Get EKS Cluster Data
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_id
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-  name = var.cluster_id
-}
-
-provider "helm" {
-  kubernetes {
-    host                   = data.aws_eks_cluster.cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
-  }
-}
-
-
-# Data Source: EKS Cluster Auth
 data "aws_eks_cluster_auth" "cluster" {
   name = var.cluster_id
 }
@@ -37,7 +23,7 @@ provider "helm" {
   }
 }
 
-# AWS Load Balancer Controller Helm Chart (IRSA removed)
+# AWS Load Balancer Controller Helm Chart
 resource "helm_release" "loadbalancer_controller" {
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
@@ -90,7 +76,6 @@ resource "helm_release" "prometheus_grafana_stack" {
   version    = "58.0.0"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   timeout    = 600
-
   max_history     = 5
   cleanup_on_fail = true
   wait            = true

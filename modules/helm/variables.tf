@@ -1,16 +1,21 @@
 variable "cluster_id" {
-}
-variable "cluster_endpoint" {
-}
-variable "cluster_certificate_authority_data" {
+    description = "EKS Cluster ID"
+    type        = string
 }
 variable "vpc_id" {
+    description = "VPC ID where the EKS cluster is deployed"
+    type        = string
 }
 variable "aws_region" {
+    description = "AWS region where the EKS cluster is deployed"
+    type        = string
+    default     = "us-east-1"
 }
-
-variable "account_id" {
-  description = "AWS Account ID"
-  type        = string
-  default     = "533267119708"
+variable "cluster_endpoint" {
+    description = "EKS Cluster endpoint"
+    type        = string
+}
+variable "cluster_certificate_authority_data" {
+    description = "Base64 encoded certificate authority data for the EKS cluster"
+    type        = string
 }
