@@ -5,6 +5,13 @@ resource "aws_vpc" "main" {
   }
 }
 
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+
+  ingress = []
+  egress  = []
+}
+
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
@@ -79,9 +86,37 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "vpc_logs_kms" {
+  statement {
+    effect  = "Allow"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key" "vpc_logs" {
+  description         = "VPC flow log encryption"
+  enable_key_rotation = true
+  policy              = data.aws_iam_policy_document.vpc_logs_kms.json
+}
+
+resource "aws_kms_alias" "vpc_logs" {
+  name          = "alias/${var.name}-vpc-logs"
+  target_key_id = aws_kms_key.vpc_logs.id
+}
+
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   name              = "/aws/vpc/${var.name}/flowlogs"
-  retention_in_days = 7
+  retention_in_days = 2
+  kms_key_id        = aws_kms_key.vpc_logs.arn
+
 }
 
 resource "aws_flow_log" "vpc" {
