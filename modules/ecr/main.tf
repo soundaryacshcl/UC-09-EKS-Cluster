@@ -1,10 +1,21 @@
 # ECR Repository
+resource "aws_kms_key" "ecr" {
+  description         = "ECR image encryption"
+  enable_key_rotation = true
+}
+
+resource "aws_kms_alias" "ecr" {
+  name          = "alias/${var.name}-ecr"
+  target_key_id = aws_kms_key.ecr.id
+}
+
 resource "aws_ecr_repository" "flask_app" {
   name                 = "flask-app"
   image_tag_mutability = "IMMUTABLE"
 
   encryption_configuration {
     encryption_type = "KMS"
+    kms_key         = aws_kms_key.ecr.arn
   }
 
   image_scanning_configuration {

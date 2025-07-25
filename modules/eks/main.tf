@@ -1,6 +1,7 @@
 resource "aws_kms_key" "eks" {
   description             = "EKS secrets encryption"
   deletion_window_in_days = 7
+  enable_key_rotation     = true
 }
 
 resource "aws_kms_alias" "eks" {
