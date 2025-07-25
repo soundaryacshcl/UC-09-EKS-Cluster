@@ -114,7 +114,7 @@ resource "aws_kms_alias" "vpc_logs" {
 
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   name              = "/aws/vpc/${var.name}/flowlogs"
-  retention_in_days = 3
+  retention_in_days = 7
   kms_key_id        = aws_kms_key.vpc_logs.arn
 
 }
