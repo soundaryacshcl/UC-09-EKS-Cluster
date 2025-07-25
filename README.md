@@ -4,7 +4,6 @@
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.6.0 |
 | <a name="requirement_aws"></a> [aws](#requirement\_aws) | >= 5.31 |
-| <a name="requirement_helm"></a> [helm](#requirement\_helm) | ~> 2.9 |
 | <a name="requirement_http"></a> [http](#requirement\_http) | ~> 3.3 |
 | <a name="requirement_kubernetes"></a> [kubernetes](#requirement\_kubernetes) | ~> 2.20 |
 
@@ -18,7 +17,6 @@ No providers.
 |------|--------|---------|
 | <a name="module_ecr"></a> [ecr](#module\_ecr) | ./modules/ecr | n/a |
 | <a name="module_eks"></a> [eks](#module\_eks) | ./modules/eks | n/a |
-| <a name="module_helm"></a> [helm](#module\_helm) | ./modules/helm | n/a |
 | <a name="module_iam"></a> [iam](#module\_iam) | ./modules/iam | n/a |
 | <a name="module_security_group"></a> [security\_group](#module\_security\_group) | ./modules/security_group | n/a |
 | <a name="module_vpc"></a> [vpc](#module\_vpc) | ./modules/vpc | n/a |
