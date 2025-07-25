@@ -123,14 +123,7 @@ resource "helm_release" "loadbalancer_controller" {
   }
 
 
-
-
   depends_on = [kubernetes_service_account.lbc_sa]
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.lbc_role.arn
-  }
 
 }
 
