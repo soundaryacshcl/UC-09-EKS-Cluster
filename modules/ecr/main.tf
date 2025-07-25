@@ -1,6 +1,11 @@
 # ECR Repository
 resource "aws_ecr_repository" "flask_app" {
-  name = "flask-app"
+  name                 = "flask-app"
+  image_tag_mutability = "IMMUTABLE"
+
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
 
   image_scanning_configuration {
     scan_on_push = true

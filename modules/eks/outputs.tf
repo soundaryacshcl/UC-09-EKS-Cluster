@@ -47,7 +47,7 @@ output "node_group_arn" {
 
 output "node_group_status" {
   description = "Current status of the Node Group"
-  value       = aws_eks_node_group.node_group.status 
+  value       = aws_eks_node_group.node_group.status
 }
 
 output "node_group_version" {
