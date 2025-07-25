@@ -30,6 +30,61 @@ provider "helm" {
 }
 
 #########################
+# IAM resources for AWS Load Balancer Controller
+#########################
+
+# Obtain the TLS certificate for the cluster's OIDC provider
+data "tls_certificate" "oidc" {
+  url = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+}
+
+# OIDC provider for the cluster
+resource "aws_iam_openid_connect_provider" "this" {
+  url             = data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.oidc.certificates[0].sha1_fingerprint]
+}
+
+# IAM role assumed by the AWS Load Balancer Controller via IRSA
+resource "aws_iam_role" "lbc_role" {
+  name = "${var.cluster_id}-lbc-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Effect = "Allow",
+      Principal = {
+        Federated = aws_iam_openid_connect_provider.this.arn
+      },
+      Action = "sts:AssumeRoleWithWebIdentity",
+      Condition = {
+        StringEquals = {
+          "${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lbc_attach" {
+  policy_arn = var.lbc_iam_policy_arn
+  role       = aws_iam_role.lbc_role.name
+}
+
+#########################
+# Service account for AWS Load Balancer Controller
+#########################
+resource "kubernetes_service_account" "lbc_sa" {
+  metadata {
+    name      = "aws-load-balancer-controller"
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.lbc_role.arn
+    }
+  }
+}
+
+#########################
 # Helm: AWS Load Balancer Controller
 #########################
 resource "helm_release" "loadbalancer_controller" {
@@ -57,13 +112,15 @@ resource "helm_release" "loadbalancer_controller" {
 
   set {
     name  = "serviceAccount.create"
-    value = "true"
+    value = "false"
   }
 
   set {
     name  = "serviceAccount.name"
     value = "aws-load-balancer-controller"
   }
+
+  depends_on = [kubernetes_service_account.lbc_sa]
 }
 
 #########################
@@ -79,16 +136,16 @@ resource "kubernetes_namespace" "monitoring" {
 # Helm: Prometheus + Grafana
 #########################
 resource "helm_release" "prometheus_grafana_stack" {
-  name             = "kube-prometheus-stack"
-  repository       = "https://prometheus-community.github.io/helm-charts"
-  chart            = "kube-prometheus-stack"
-  version          = "58.0.0"
-  namespace        = kubernetes_namespace.monitoring.metadata[0].name
-  timeout          = 600
-  max_history      = 5
-  cleanup_on_fail  = true
-  wait             = true
-  wait_for_jobs    = true
+  name            = "kube-prometheus-stack"
+  repository      = "https://prometheus-community.github.io/helm-charts"
+  chart           = "kube-prometheus-stack"
+  version         = "58.0.0"
+  namespace       = kubernetes_namespace.monitoring.metadata[0].name
+  timeout         = 600
+  max_history     = 5
+  cleanup_on_fail = true
+  wait            = true
+  wait_for_jobs   = true
 
   values = [
     <<-EOT
