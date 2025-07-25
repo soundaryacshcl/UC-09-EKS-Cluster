@@ -123,6 +123,7 @@ resource "helm_release" "loadbalancer_controller" {
   }
 
 
+
   depends_on = [kubernetes_service_account.lbc_sa]
 
   set {
