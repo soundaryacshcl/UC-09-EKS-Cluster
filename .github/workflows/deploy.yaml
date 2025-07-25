@@ -13,8 +13,8 @@ permissions:
 
 env:
   AWS_REGION: us-east-1
-  AWS_ROLE_ARN: arn:aws:iam::533267119708:role/oidc-github-access
-  ECR_REGISTRY: 533267119708.dkr.ecr.us-east-1.amazonaws.com
+  AWS_ROLE_ARN: arn:aws:iam::436450225331:role/oidc-assume-role
+  ECR_REGISTRY: 436450225331.dkr.ecr.us-east-1.amazonaws.com
   ECR_REPOSITORY: flask-app
 
 jobs:

@@ -25,7 +25,7 @@ jobs:
     
     env:
       AWS_REGION: us-east-1
-      AWS_ROLE_ARN: arn:aws:iam::533267119708:role/oidc-github-access
+      AWS_ROLE_ARN: arn:aws:iam::436450225331:role/oidc-assume-role
 
 
     defaults:
