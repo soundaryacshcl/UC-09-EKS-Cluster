@@ -15,7 +15,7 @@ data "aws_iam_policy_document" "eks_kms" {
 
 resource "aws_kms_key" "eks" {
   description             = "EKS secrets encryption"
-  deletion_window_in_days = 3
+  deletion_window_in_days = 7
   enable_key_rotation     = true
   policy                  = data.aws_iam_policy_document.eks_kms.json
 
