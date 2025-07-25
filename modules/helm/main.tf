@@ -1,4 +1,6 @@
-# Get EKS Cluster Data
+#########################
+# Data Source: EKS
+#########################
 data "aws_eks_cluster" "cluster" {
   name = var.cluster_id
 }
@@ -7,32 +9,50 @@ data "aws_eks_cluster_auth" "cluster" {
   name = var.cluster_id
 }
 
+#########################
 # Kubernetes Provider
+#########################
 provider "kubernetes" {
-  host                   = var.cluster_endpoint
-  cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.cluster.token
 }
 
+#########################
 # Helm Provider
+#########################
 provider "helm" {
   kubernetes {
-    host                   = var.cluster_endpoint
-    cluster_ca_certificate = base64decode(var.cluster_certificate_authority_data)
+    host                   = data.aws_eks_cluster.cluster.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.cluster.token
   }
 }
 
-# AWS Load Balancer Controller Helm Chart
+#########################
+# Helm: AWS Load Balancer Controller
+#########################
 resource "helm_release" "loadbalancer_controller" {
   name       = "aws-load-balancer-controller"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
   namespace  = "kube-system"
+  version    = "1.7.1" # Optional but recommended for stability
+  timeout    = 600     # Increase timeout to avoid context deadline exceeded
 
   set {
-    name  = "image.repository"
-    value = "533267119708.dkr.ecr.us-east-1.amazonaws.com/amazon/aws-load-balancer-controller"
+    name  = "clusterName"
+    value = var.cluster_id
+  }
+
+  set {
+    name  = "region"
+    value = var.aws_region
+  }
+
+  set {
+    name  = "vpcId"
+    value = var.vpc_id
   }
 
   set {
@@ -44,42 +64,31 @@ resource "helm_release" "loadbalancer_controller" {
     name  = "serviceAccount.name"
     value = "aws-load-balancer-controller"
   }
-
-  set {
-    name  = "vpcId"
-    value = var.vpc_id
-  }
-
-  set {
-    name  = "region"
-    value = var.aws_region
-  }
-
-  set {
-    name  = "clusterName"
-    value = var.cluster_id
-  }
 }
 
-# Namespace for Prometheus + Grafana
+#########################
+# Namespace for Monitoring
+#########################
 resource "kubernetes_namespace" "monitoring" {
   metadata {
     name = "monitoring"
   }
 }
 
-# Prometheus + Grafana Helm Release
+#########################
+# Helm: Prometheus + Grafana
+#########################
 resource "helm_release" "prometheus_grafana_stack" {
-  name       = "kube-prometheus-stack"
-  repository = "https://prometheus-community.github.io/helm-charts"
-  chart      = "kube-prometheus-stack"
-  version    = "58.0.0"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
-  timeout    = 600
-  max_history     = 5
-  cleanup_on_fail = true
-  wait            = true
-  wait_for_jobs   = true
+  name             = "kube-prometheus-stack"
+  repository       = "https://prometheus-community.github.io/helm-charts"
+  chart            = "kube-prometheus-stack"
+  version          = "58.0.0"
+  namespace        = kubernetes_namespace.monitoring.metadata[0].name
+  timeout          = 600
+  max_history      = 5
+  cleanup_on_fail  = true
+  wait             = true
+  wait_for_jobs    = true
 
   values = [
     <<-EOT
