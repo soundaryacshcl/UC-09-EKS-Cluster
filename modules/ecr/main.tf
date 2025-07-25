@@ -1,6 +1,37 @@
 # ECR Repository
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "ecr_kms" {
+  statement {
+    effect  = "Allow"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    resources = ["*"]
+  }
+}
+
+resource "aws_kms_key" "ecr" {
+  description         = "ECR image encryption"
+  enable_key_rotation = true
+  policy              = data.aws_iam_policy_document.ecr_kms.json
+}
+
+resource "aws_kms_alias" "ecr" {
+  name          = "alias/${var.name}-ecr"
+  target_key_id = aws_kms_key.ecr.id
+}
+
 resource "aws_ecr_repository" "flask_app" {
-  name = "flask-app"
+  name                 = "flask-app"
+  image_tag_mutability = "IMMUTABLE"
+
+  encryption_configuration {
+    encryption_type = "KMS"
+    kms_key         = aws_kms_key.ecr.arn
+  }
 
   image_scanning_configuration {
     scan_on_push = true
