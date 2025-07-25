@@ -87,6 +87,11 @@ resource "aws_route_table_association" "private" {
 }
 
 
+resource "aws_kms_key" "vpc_logs" {
+  description         = "VPC flow log encryption"
+  enable_key_rotation = true
+
+
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "vpc_logs_kms" {
@@ -105,6 +110,7 @@ resource "aws_kms_key" "vpc_logs" {
   description         = "VPC flow log encryption"
   enable_key_rotation = true
   policy              = data.aws_iam_policy_document.vpc_logs_kms.json
+
 }
 
 resource "aws_kms_alias" "vpc_logs" {

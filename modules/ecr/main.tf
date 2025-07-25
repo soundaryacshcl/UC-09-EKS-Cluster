@@ -1,4 +1,9 @@
 # ECR Repository
+
+resource "aws_kms_key" "ecr" {
+  description         = "ECR image encryption"
+  enable_key_rotation = true
+=======
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "ecr_kms" {
@@ -17,6 +22,7 @@ resource "aws_kms_key" "ecr" {
   description         = "ECR image encryption"
   enable_key_rotation = true
   policy              = data.aws_iam_policy_document.ecr_kms.json
+
 }
 
 resource "aws_kms_alias" "ecr" {
