@@ -8,9 +8,7 @@ terraform {
       version = ">= 5.31"
     }
     helm = {
-      source = "hashicorp/helm"
-      #version = "2.5.1"
-      #version = "~> 2.5"
+      source  = "hashicorp/helm"
       version = "~> 2.9"
     }
     http = {
@@ -31,6 +29,10 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_eks_cluster_auth" "cluster" {
+  name = module.eks.cluster_id
+}
+
 provider "helm" {
   kubernetes {
     host                   = module.eks.cluster_endpoint
@@ -38,3 +40,10 @@ provider "helm" {
     token                  = data.aws_eks_cluster_auth.cluster.token
   }
 }
+
+provider "kubernetes" {
+  host                   = module.eks.cluster_endpoint
+  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+

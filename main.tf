@@ -32,12 +32,3 @@ module "eks" {
 }
 
 
-module "helm" {
-  source                             = "./modules/helm"
-  cluster_id                         = module.eks.cluster_id
-  cluster_endpoint                   = module.eks.cluster_endpoint
-  cluster_certificate_authority_data = module.eks.cluster_certificate_authority_data
-  vpc_id                             = module.vpc.vpc_id
-  aws_region                         = var.region
-  lbc_iam_policy_arn                 = module.iam.lbc_iam_policy_arn
-}

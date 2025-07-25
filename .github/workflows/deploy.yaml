@@ -67,10 +67,6 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v3
 
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
-        with:
-          version: v3.13.3
 
       - name: Update kubeconfig
         run: |
