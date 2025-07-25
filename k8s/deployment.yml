@@ -15,6 +15,9 @@ spec:
       containers:
         - name: my-app
           image: CONTAINER_IMAGE
+          securityContext:
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
           ports:
             - containerPort: 5000
 
@@ -32,3 +35,4 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 5000
+

@@ -1,7 +1,24 @@
+
+data "aws_caller_identity" "current" {}
+
+data "aws_iam_policy_document" "eks_kms" {
+  statement {
+    effect  = "Allow"
+    actions = ["kms:*"]
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+    resources = ["*"]
+  }
+}
+
 resource "aws_kms_key" "eks" {
   description             = "EKS secrets encryption"
-  deletion_window_in_days = 7
+  deletion_window_in_days = 2
   enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.eks_kms.json
+
 }
 
 resource "aws_kms_alias" "eks" {
