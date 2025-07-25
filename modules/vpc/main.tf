@@ -90,7 +90,7 @@ resource "aws_route_table_association" "private" {
 resource "aws_kms_key" "vpc_logs" {
   description         = "VPC flow log encryption"
   enable_key_rotation = true
-
+}
 
 data "aws_caller_identity" "current" {}
 
