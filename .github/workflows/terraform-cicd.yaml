@@ -45,6 +45,8 @@ jobs:
     env:
       AWS_REGION: us-east-1
       AWS_ROLE_ARN: arn:aws:iam::436450225331:role/oidc-assume-role
+      CLUSTER_NAME: my-project-eks
+      NAMESPACE: default
 
     defaults:
       run:
@@ -92,6 +94,24 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -input=false
+      
+      - name: Install kubectl
+        run: |
+          curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+          chmod +x kubectl
+          sudo mv kubectl /usr/local/bin/
+
+      - name: Update kubeconfig for EKS
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name {{ env.CLUSTER_NAME }} --role-arn ${{ env.AWS_ROLE_ARN }}
+
+      - name: Verify cluster access
+        run: |
+          kubectl get nodes
+
+      # Optional: Run helm installation or diagnostics
+      - name: Helm Version Check
+        run: helm version
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -105,14 +125,14 @@ jobs:
           chmod +x terraform-docs
           sudo mv terraform-docs /usr/local/bin/
 
-      - name: Generate Terraform Docs
-        run: |
-          terraform-docs markdown . > README.md.new
-          mv README.md.new README.md
+          - name: Generate Terraform Docs
+            run: |
+            terraform-docs markdown . > README.md.new
+            mv README.md.new README.md
 
-      - name: Commit README.md
-        run: |
-          git config --local user.email "soundaryacshcl@gmail.com"
-          git config --local user.name "soundaryacshcl"
-          git add README.md
-          git diff --cached --quiet || git commit -m "docs: Update README.md" && git push || echo "No changes to commit"
+          - name: Commit README.md
+            run: |
+              git config --local user.email "soundaryacshcl@gmail.com"
+              git config --local user.name "soundaryacshcl"
+              git add README.md
+              git diff --cached --quiet || git commit -m "docs: Update README.md" && git push || echo "No changes to commit"

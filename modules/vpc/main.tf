@@ -86,6 +86,7 @@ resource "aws_route_table_association" "private" {
   route_table_id = aws_route_table.private.id
 }
 
+
 data "aws_caller_identity" "current" {}
 
 data "aws_iam_policy_document" "vpc_logs_kms" {
@@ -113,8 +114,9 @@ resource "aws_kms_alias" "vpc_logs" {
 
 resource "aws_cloudwatch_log_group" "vpc_flow_logs" {
   name              = "/aws/vpc/${var.name}/flowlogs"
-  retention_in_days = 365
+  retention_in_days = 2
   kms_key_id        = aws_kms_key.vpc_logs.arn
+
 }
 
 resource "aws_flow_log" "vpc" {

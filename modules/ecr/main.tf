@@ -31,6 +31,7 @@ resource "aws_ecr_repository" "flask_app" {
   encryption_configuration {
     encryption_type = "KMS"
     kms_key         = aws_kms_key.ecr.arn
+
   }
 
   image_scanning_configuration {
