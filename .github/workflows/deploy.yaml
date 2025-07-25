@@ -1,0 +1,88 @@
+name: Build and Push to ECR
+on:
+  push:
+    paths:
+      - 'app/**'
+      - 'k8s/**'
+      - '.github/workflows/deploy.yaml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  AWS_ROLE_ARN: arn:aws:iam::533267119708:role/oidc-github-access
+  ECR_REGISTRY: 533267119708.dkr.ecr.us-east-1.amazonaws.com
+  ECR_REPOSITORY: flask-app
+
+jobs:
+  build-push-Flask-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR # login ecr
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image 
+        run: |
+          docker build -t ${{ env.ECR_REGISTRY }}/flask-app:${{ github.sha }} ./app
+          docker tag ${{ env.ECR_REGISTRY }}/flask-app:${{ github.sha }} ${{ env.ECR_REGISTRY }}/flask-app:latest
+
+      - name: Push Docker Image 
+        run: |
+          docker push ${{ env.ECR_REGISTRY }}/flask-app:${{ github.sha }}
+          docker push ${{ env.ECR_REGISTRY }}/flask-app:latest
+
+  deploy:
+    name: Deploy App and ALB Ingress
+    needs: build-push-Flask-app  # Optional: Run sequentially after job1
+    runs-on: ubuntu-latest
+
+    env:
+      CLUSTER_NAME: demo-eks
+      AWS_REGION: us-east-1
+      NAMESPACE: default
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.13.3
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      - name: Verify Cluster Access
+        run: |
+          kubectl get nodes
+                
+
+      - name: Deployment + Service + Ingress
+        run: |
+         sed -i 's@CONTAINER_IMAGE@'"${{ env.ECR_REGISTRY }}/flask-app:${{ github.sha }}"'@' k8s/deployment.yml
+         kubectl apply -f k8s/deployment.yml
+         kubectl apply -f k8s/ingress.yml
