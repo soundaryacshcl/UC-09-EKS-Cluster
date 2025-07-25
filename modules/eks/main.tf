@@ -1,10 +1,29 @@
+resource "aws_kms_key" "eks" {
+  description             = "EKS secrets encryption"
+  deletion_window_in_days = 7
+}
+
+resource "aws_kms_alias" "eks" {
+  name          = "alias/${var.name}-eks"
+  target_key_id = aws_kms_key.eks.id
+}
+
 resource "aws_eks_cluster" "eks" {
   name     = "${var.name}-eks"
   role_arn = var.cluster_role_arn
 
   vpc_config {
-    subnet_ids         = var.public_subnets
-    security_group_ids = var.security_group_ids
+    subnet_ids              = var.public_subnets
+    security_group_ids      = var.security_group_ids
+    endpoint_public_access  = false
+    endpoint_private_access = true
+  }
+
+  encryption_config {
+    resources = ["secrets"]
+    provider {
+      key_arn = aws_kms_key.eks.arn
+    }
   }
 
   enabled_cluster_log_types = [
